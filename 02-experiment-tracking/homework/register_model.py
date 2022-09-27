@@ -1,3 +1,4 @@
+
 import argparse
 import os
 import pickle
@@ -10,8 +11,8 @@ from mlflow.tracking import MlflowClient
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
-HPO_EXPERIMENT_NAME = "random-forest-hyperopt"
-EXPERIMENT_NAME = "random-forest-best-models"
+HPO_EXPERIMENT_NAME = "random-forest-hyperopt2"
+EXPERIMENT_NAME = "random-forest-best-models3"
 
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
 mlflow.set_experiment(EXPERIMENT_NAME)
@@ -65,8 +66,17 @@ def run(data_path, log_top):
 
     # select the model with the lowest test RMSE
     experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
-    # best_run = client.search_runs( ...  )[0]
+     
+    best_run = client.search_runs(
+        experiment_ids=experiment.experiment_id,
+        run_view_type=ViewType.ACTIVE_ONLY,
+        max_results=log_top,
+        order_by=["metrics.rmse ASC"]
+    )[0]
 
+    model_uri = "runs:/{}/model".format(best_run.info.run_id)
+    mv = mlflow.register_model(model_uri, "Best_random_forest")
+    
     # register the best model
     # mlflow.register_model( ... )
 
@@ -81,10 +91,11 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         "--top_n",
-        default=5,
+        default=2,
         type=int,
         help="the top 'top_n' models will be evaluated to decide which model to promote."
     )
     args = parser.parse_args()
 
     run(args.data_path, args.top_n)
+
