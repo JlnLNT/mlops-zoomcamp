@@ -114,5 +114,19 @@ def main(date = None):
 
     run_model(df_val_processed, categorical, dv, lr)
 
-main(date="2021-08-15")
+
+from prefect.deployments import Deployment
+from prefect.orion.schemas.schedules import CronSchedule
+from datetime import timedelta
+
+deployment = Deployment.build_from_flow(
+    flow=main,
+    name="model_training",
+    schedule=(CronSchedule(cron="0 9 15 * *")),
+    work_queue_name="ml"
+)
+
+deployment.apply()
+
+
 
